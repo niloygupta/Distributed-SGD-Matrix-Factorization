@@ -56,22 +56,29 @@ def updateGradient(block):
         r = rows[k]
         c = cols[k]
         lr = math.pow((100 + i),-beta_value)
-        Wgrad = -2*(V[r,c] - W[r,:].dot(H[:,c])*H[:,c].T) + (2*lambda_value*W[r,:])/(W[r,:].nonzero().size)
+        Wgrad = -2*(V[r,c] - W[r,:].dot(H[:,c])*H[:,c].T) + (2*lambda_value*W[r,:])/(V[r,:].nonzero()[0].size)
         W[r,:] = W[r,:] - lr*Wgrad
-        Hgrad = -2*(V[r,c] - W[r,:].dot(H[:,c])*W[r,:].T) + (2*lambda_value*H[:,c])/(H[:,c].nonzero().size)
+        Hgrad = -2*(V[r,c] - W[r,:].dot(H[:,c])*W[r,:].T) + (2*lambda_value*H[:,c])/(V[:,c].nonzero()[0].size)
         H[:,c] = H[:,c] - lr*Hgrad
         
 
 def factorize_matrix(data,W,H,block_size,T,num_workers,sc):
     for epoch in range(0,T):
         blocks = []
+        adjRow = data.shape[0]%num_workers
+        adjCol = data.shape[1]%num_workers
         for stratum in range(0,num_workers):
-            blockRowIndex = (stratum*block_size[0],(stratum+1)*block_size[0])
-            blockColIndex = (stratum*block_size[1],(stratum+1)*block_size[1])
-            Vmin = data[blockRowIndex[0]:blockRowIndex[1],blockColIndex[0]:blockColIndex[1]]
-            Hmin = H[:,blockColIndex[0]:blockColIndex[1]]
-            Wmin = W[blockRowIndex[0]:blockRowIndex[1],:]
-            blocks.append(block(Vmin,Hmin,Wmin))
+            for b in range(0,num_workers):
+                if b==0:
+                    blockRowIndex = (b*block_size[0],(stratum+1)*block_size[0])
+                    blockColIndex = (b*block_size[1],(stratum+1)*block_size[1])
+                else:
+                    blockRowIndex = (b*block_size[0],(stratum+1)*block_size[0]) + adjRow
+                    blockColIndex = (b*block_size[1],(stratum+1)*block_size[1]) + adjCol
+                Vmin = data[blockRowIndex[0]:blockRowIndex[1],blockColIndex[0]:blockColIndex[1]]
+                Hmin = H[:,blockColIndex[0]:blockColIndex[1]]
+                Wmin = W[blockRowIndex[0]:blockRowIndex[1],:]
+                blocks.append(block(Vmin,Hmin,Wmin))
         sc.parallelize(blocks).map(updateGradient).collect()
 
 def main():
