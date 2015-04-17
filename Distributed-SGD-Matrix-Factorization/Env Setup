@@ -3,3 +3,48 @@ export PYTHONPATH=$SPARK_HOME/python/:$PYTHONPATH
 export PYTHONPATH=$SPARK_HOME/python/lib/py4j-0.8.2.1-src.zip:$PYTHONPATH
 
 spark-submit dsgd_mf.py 100 10 50 0.8 1.0 test.csv w.csv h.csv
+
+hadoop@ec2-52-4-21-242.compute-1.amazonaws.com:4040/jobs
+
+
+val sparkConf = new SparkConf().setAppName("CFApp")
+        val sc = new SparkContext(sparkConf)
+        val hadoopConf=sc.hadoopConfiguration;
+        hadoopConf.set("fs.s3n.impl", "org.apache.hadoop.fs.s3native.NativeS3FileSystem")
+        hadoopConf.set("fs.s3n.awsAccessKeyId", "AKIAIQ25WNFRG6LQXDUQ")
+        hadoopConf.set("fs.s3n.awsSecretAccessKey", "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")
+        val data = sc.textFile("s3n://kddcup.yahoo/track1/kddcup/kddcup")
+        val ratings = data.map(_.split('\t') match { case Array(user, item, rate) =>
+            Rating(user.toInt, item.toInt, rate.toDouble)
+          })
+          
+          
+          
+spark://ip-172-31-56-217.ec2.internal:7077
+
+./spark/bin/spark-submit --master spark://ip-172-31-58-176.ec2.internal:7077 aws_dsgd_mf.py 100 5 10 0.1 1.0 s3n://cmu-bigml/netflix-ratings/training_set/  w.csv h.csv
+
+./spark/bin/spark-submit --master spark://ip-172-31-58-176.ec2.internal:7077 dsgd_mf.py 20 5 10 0.8 1.0  s3n://niloygemrdevbucket/autolab_train.csv  w.csv h.csv
+
+./spark/bin/spark-submit --master spark://ip-172-31-58-176.ec2.internal:7077 dsgd_mf.py 20 10 100 0.6 0.1  s3n://niloygemrdevbucket/nf_subsample.csv  w.csv h.csv 2>log >Exp1Results
+
+
+./spark/bin/spark-submit --master spark://ip-172-31-58-176.ec2.internal:7077 dsgd_mf_exp2.py 20 10 30 0.6 0.1  s3n://niloygemrdevbucket/nf_subsample.csv  w.csv h.csv 2>log >Exp2Results
+./spark/bin/spark-submit --master spark://ip-172-31-58-176.ec2.internal:7077 dsgd_mf_exp3.py 10 10 30 0.6 0.1  s3n://niloygemrdevbucket/nf_subsample.csv  w.csv h.csv 2>log >Exp3Results
+./spark/bin/spark-submit --master spark://ip-172-31-58-176.ec2.internal:7077 dsgd_mf_exp4.py 20 10 30 0.6 0.1  s3n://niloygemrdevbucket/nf_subsample.csv  w.csv h.csv 2>log >Exp4Results
+
+python eval_acc.py log ./spark/bin/spark-submit dsgd_mf.py 20 3 10 0.9 0.5 s3n://niloygemrdevbucket/autolab_train.csv w.csv h.csv
+
+
+ssh -i tiramisu-adserver.cer hadoop@ec2-52-5-190-209.compute-1.amazonaws.com
+
+
+./spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://ip-172-31-58-176.ec2.internal:7077
+
+
+/Users/niloygupta/spark-1.3.0/bin/spark-submit dsgd_mf.py 20 3 100 0.9 0.5 autolab_train.csv w.csv h.csv
+
+
+screen -R expname
+
+ctrl+A+D
